@@ -171,9 +171,10 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         if (directive.arguments.isEmpty() || directive.arguments[0].name != "name") {
             throw IllegalArgumentException("Invalid validate directive")
         }
-        var packageName = (directive.arguments[0].value as StringValue).value.substringBeforeLast(".", "")
-        packageName = if (packageName.isEmpty()) configPackageName else packageName
-        val className: ClassName = ClassName(packageName = packageName, simpleNames = listOf((directive.arguments[0].value as StringValue).value.substringAfterLast(".", (directive.arguments[0].value as StringValue).value)))
+        val wholePackageName = (directive.arguments[0].value as StringValue).value
+        val packageName = if (wholePackageName.substringBeforeLast(".", "").isEmpty()) configPackageName else wholePackageName.substringBeforeLast(".")
+        val simpleName = wholePackageName.substringAfterLast(".")
+        val className: ClassName = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
         if (directive.arguments.size > 1) {
             directive.arguments.drop(1).forEach { argument ->
