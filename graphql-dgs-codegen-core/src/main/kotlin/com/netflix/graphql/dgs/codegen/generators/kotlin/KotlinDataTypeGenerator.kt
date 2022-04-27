@@ -160,8 +160,6 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         directives.forEach { directive ->
             if (directive.name == "validate") {
                 annotations.add(createAnnotation(directive, config.includeImports.getOrDefault("validatorPackage", "")))
-            } else {
-                throw IllegalArgumentException("Unknown directive")
             }
         }
         return annotations
