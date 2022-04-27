@@ -156,11 +156,10 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         }
 
     private fun createAnnotations(directives: List<Directive>): MutableList<AnnotationSpec> {
-        // TODO fix the package name
         var annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
             if (directive.name == "validate") {
-                annotations.add(createAnnotation(directive))
+                annotations.add(createAnnotation(directive, config.includeImports.getOrDefault("validatorPackage", "")))
             } else {
                 throw IllegalArgumentException("Unknown directive")
             }
@@ -168,11 +167,13 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         return annotations
     }
 
-    private fun createAnnotation(directive: Directive): AnnotationSpec {
+    private fun createAnnotation(directive: Directive, configPackageName: String): AnnotationSpec {
         if (directive.arguments.isEmpty() || directive.arguments[0].name != "name") {
             throw IllegalArgumentException("Invalid validate directive")
         }
-        val className: ClassName = ClassName(packageName = (directive.arguments[0].value as EnumValue).name, simpleNames = listOf((directive.arguments[0].value as EnumValue).name))
+        var packageName = (directive.arguments[0].value as StringValue).value.substringBeforeLast(".", "")
+        packageName = if (packageName.isEmpty()) configPackageName else packageName
+        val className: ClassName = ClassName(packageName = packageName, simpleNames = listOf((directive.arguments[0].value as StringValue).value.substringAfterLast(".", (directive.arguments[0].value as StringValue).value)))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
         if (directive.arguments.size > 1) {
             directive.arguments.drop(1).forEach { argument ->
