@@ -151,7 +151,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
             is EnumValue -> CodeBlock.of("$prefix%M", className?.let { MemberName(it, (value as EnumValue).name) })
             is ArrayValue ->
                 if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("emptyList()")
-                else CodeBlock.of(prefix + "listOf(%L)", (value as ArrayValue).values.joinToString { v -> generateCode(v, className).toString() })
+                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(v, className).toString() })
             else -> CodeBlock.of("$prefix%L", value)
         }
 

@@ -1673,7 +1673,7 @@ class KotlinCodeGenTest {
     @Test
     fun validationOnTypes() {
         val schema = """
-            type Person @validate(name: ValidPerson, maxLimit: 10) {
+            type Person @validate(name: ValidPerson, maxLimit: 10, types: ["husband", "wife"]) {
                 name: String @validate(name: ValidName)
             }
         """.trimIndent()
@@ -1694,7 +1694,10 @@ class KotlinCodeGenTest {
                 |import com.fasterxml.jackson.`annotation`.JsonProperty
                 |import kotlin.String
                 |
-                |@ValidPerson(maxLimit = 10)
+                |@ValidPerson(
+                |  maxLimit = 10,
+                |  types = ["husband", "wife"]
+                |)
                 |public data class Person(
                 |  @JsonProperty("name")
                 |  @ValidName
