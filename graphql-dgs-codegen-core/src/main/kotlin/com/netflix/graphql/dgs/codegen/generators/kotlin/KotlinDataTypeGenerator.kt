@@ -142,30 +142,39 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         document = document
     )
 
+    private fun generateCode(value: Value<Value<*>>, className: ClassName?, prefix: String? = ""): CodeBlock =
+        when (value) {
+            is BooleanValue -> CodeBlock.of("$prefix%L", (value as BooleanValue).isValue)
+            is IntValue -> CodeBlock.of("$prefix%L", (value as IntValue).value)
+            is StringValue -> CodeBlock.of("$prefix%S", (value as StringValue).value)
+            is FloatValue -> CodeBlock.of("$prefix%L", (value as FloatValue).value)
+            is EnumValue -> CodeBlock.of("$prefix%M", className?.let { MemberName(it, (value as EnumValue).name) })
+            is ArrayValue ->
+                if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("emptyList()")
+                else CodeBlock.of(prefix + "listOf(%L)", (value as ArrayValue).values.joinToString { v -> generateCode(v, className).toString() })
+            else -> CodeBlock.of("$prefix%L", value)
+        }
+
     private fun createAnnotations(directives: List<Directive>): MutableList<AnnotationSpec> {
         // TODO fix the package name
         var annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
             if (directive.name == "validate") {
-                if (directive.arguments.isEmpty() || directive.arguments[0].name != "validator") {
+                if (directive.arguments.isEmpty() || directive.arguments[0].name != "name") {
                     throw IllegalArgumentException("Invalid validate directive")
                 }
                 val className: ClassName = ClassName(packageName = (directive.arguments[0].value as EnumValue).name, simpleNames = listOf((directive.arguments[0].value as EnumValue).name))
                 val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
                 if (directive.arguments.size > 1) {
                     directive.arguments.drop(1).forEach { argument ->
-                        when (argument.value) {
-                            is IntValue -> annotation.addMember(argument.name + " = %L", (argument.value as IntValue).value)
-                            is StringValue -> annotation.addMember(argument.name + " = %S", (argument.value as StringValue).value)
-                            is BooleanValue -> annotation.addMember(argument.name + " = %L", (argument.value as BooleanValue).isValue)
-                            is EnumValue -> annotation.addMember(CodeBlock.of(argument.name + "%M", MemberName(ClassName(packageName = (argument.value as EnumValue).name, simpleNames = listOf((argument.value as EnumValue).name)), (argument.value as EnumValue).name)))
-                            is FloatValue -> annotation.addMember(argument.name + " = %L", (argument.value as FloatValue).value)
-                            is ArrayValue -> annotation.addMember(argument.name + " = %L", (argument.value as ArrayValue).values)
-                            else -> annotation.addMember(argument.name + " = %L", (argument.value as StringValue).value)
-                        }
+                        val className: ClassName? = if (argument.value is EnumValue) ClassName(packageName = (argument.value as EnumValue).name, simpleNames = listOf((argument.value as EnumValue).name)) else null
+                        val codeBlock: CodeBlock = generateCode(argument.value, className, argument.name + " = ")
+                        annotation.addMember(codeBlock)
                     }
                 }
                 annotations.add(annotation.build())
+            } else {
+                throw IllegalArgumentException("Unknown directive")
             }
         }
         return annotations

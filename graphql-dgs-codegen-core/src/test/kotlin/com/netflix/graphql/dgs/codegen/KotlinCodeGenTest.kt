@@ -1673,8 +1673,8 @@ class KotlinCodeGenTest {
     @Test
     fun validationOnTypes() {
         val schema = """
-            type Person @validate(validator: ValidPerson, maxLimit: 10) {
-                name: String @validate(validator: ValidName)
+            type Person @validate(name: ValidPerson, maxLimit: 10) {
+                name: String @validate(name: ValidName)
             }
         """.trimIndent()
 
