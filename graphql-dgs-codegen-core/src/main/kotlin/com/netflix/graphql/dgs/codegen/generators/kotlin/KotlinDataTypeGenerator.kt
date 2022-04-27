@@ -160,24 +160,28 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         var annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
             if (directive.name == "validate") {
-                if (directive.arguments.isEmpty() || directive.arguments[0].name != "name") {
-                    throw IllegalArgumentException("Invalid validate directive")
-                }
-                val className: ClassName = ClassName(packageName = (directive.arguments[0].value as EnumValue).name, simpleNames = listOf((directive.arguments[0].value as EnumValue).name))
-                val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
-                if (directive.arguments.size > 1) {
-                    directive.arguments.drop(1).forEach { argument ->
-                        val className: ClassName? = if (argument.value is EnumValue) ClassName(packageName = (argument.value as EnumValue).name, simpleNames = listOf((argument.value as EnumValue).name)) else null
-                        val codeBlock: CodeBlock = generateCode(argument.value, className, argument.name + " = ")
-                        annotation.addMember(codeBlock)
-                    }
-                }
-                annotations.add(annotation.build())
+                annotations.add(createAnnotation(directive))
             } else {
                 throw IllegalArgumentException("Unknown directive")
             }
         }
         return annotations
+    }
+
+    private fun createAnnotation(directive: Directive): AnnotationSpec {
+        if (directive.arguments.isEmpty() || directive.arguments[0].name != "name") {
+            throw IllegalArgumentException("Invalid validate directive")
+        }
+        val className: ClassName = ClassName(packageName = (directive.arguments[0].value as EnumValue).name, simpleNames = listOf((directive.arguments[0].value as EnumValue).name))
+        val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
+        if (directive.arguments.size > 1) {
+            directive.arguments.drop(1).forEach { argument ->
+                val className: ClassName? = if (argument.value is EnumValue) ClassName(packageName = (argument.value as EnumValue).name, simpleNames = listOf((argument.value as EnumValue).name)) else null
+                val codeBlock: CodeBlock = generateCode(argument.value, className, argument.name + " = ")
+                annotation.addMember(codeBlock)
+            }
+        }
+        return annotation.build()
     }
 
     private fun applyDirectives(directives: List<Directive>, parameterSpec: ParameterSpec.Builder) {
