@@ -1671,6 +1671,43 @@ class KotlinCodeGenTest {
     }
 
     @Test
+    fun validationOnTypes() {
+        val schema = """
+            type Person @validate(validator: ValidPerson, maxLimit: 10) {
+                name: String @validate(validator: ValidName)
+            }
+        """.trimIndent()
+
+        val dataTypes = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                language = Language.KOTLIN
+            )
+        ).generate().kotlinDataTypes
+        assertThat(dataTypes[0].toString()).isEqualTo(
+            """
+                |package com.netflix.graphql.dgs.codegen.tests.generated.types
+                |
+                |import ValidName.ValidName
+                |import ValidPerson.ValidPerson
+                |import com.fasterxml.jackson.`annotation`.JsonProperty
+                |import kotlin.String
+                |
+                |@ValidPerson(maxLimit = 10)
+                |public data class Person(
+                |  @JsonProperty("name")
+                |  @ValidName
+                |  public val name: String? = null
+                |) {
+                |  public companion object
+                |}
+
+        """.trimMargin()
+        )
+    }
+
+    @Test
     fun skipCodegenOnFields() {
         val schema = """
             type Person {
