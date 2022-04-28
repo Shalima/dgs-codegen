@@ -142,6 +142,15 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         document = document
     )
 
+    object ParserConstants {
+        const val ASSIGNMENT_OPERATOR = " = "
+        const val TYPE = "type"
+        const val NAME = "name"
+        const val CUSTOM_ANNOTATION = "customAnnotation"
+        const val PARAMETERS = "parameters"
+        const val DOT = "."
+    }
+
     /**
      * Generates the code block containing the parameters of an annotation in the format key = value
      */
@@ -152,15 +161,17 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
             is StringValue -> CodeBlock.of("$prefix%S", (value as StringValue).value)
             is FloatValue -> CodeBlock.of("$prefix%L", (value as FloatValue).value)
             // If an enum value the prefix/enumType (key in the parameters map for the enum) is used to get the package name from the config
+            // Limitation: Since it uses the enum key to lookup the package from the configs. 2 enums using different packages cannot have the same keys.
             is EnumValue -> CodeBlock.of(
                 "$prefix%M",
                 MemberName(
-                    if (prefix.isNotEmpty()) config.includeImports.getOrDefault(prefix.substringBefore(" = "), "") else config.includeImports.getOrDefault(enumType.substringBefore(" = "), ""),
+                    if (prefix.isNotEmpty()) config.includeImports.getOrDefault(prefix.substringBefore(ParserConstants.ASSIGNMENT_OPERATOR), "")
+                    else config.includeImports.getOrDefault(enumType.substringBefore(ParserConstants.ASSIGNMENT_OPERATOR), ""),
                     (value as EnumValue).name
                 )
             )
             is ArrayValue ->
-                if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("emptyList()")
+                if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("[]")
                 else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(value = v, enumType = if (v is EnumValue) prefix else "").toString() })
             else -> CodeBlock.of("$prefix%L", value)
         }
@@ -172,7 +183,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         val objectFields: List<ObjectField> = parameters.objectFields
         val codeBlocks: MutableList<CodeBlock> = mutableListOf()
         objectFields.forEach() { objectField ->
-            codeBlocks.add(generateCode(objectField.value, objectField.name + " = "))
+            codeBlocks.add(generateCode(objectField.value, objectField.name + ParserConstants.ASSIGNMENT_OPERATOR))
         }
         return codeBlocks
     }
@@ -183,7 +194,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     private fun applyDirectives(directives: List<Directive>): MutableList<AnnotationSpec> {
         val annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
-            if (directive.name == "customAnnotation") {
+            if (directive.name == ParserConstants.CUSTOM_ANNOTATION) {
                 annotations.add(createCustomAnnotation(directive))
             }
         }
@@ -191,7 +202,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     }
 
     /**
-     * Parses the packge value in the directive.
+     * Parses the package value in the directive.
      * If not present uses the default package in the config for that particular type of annotation.
      * If neither of them are supplied the package name will be an empty String
      * Also parses the  simpleName/className from the name argument in the directive
@@ -214,18 +225,18 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         directive.arguments.forEach { argument ->
             annotationArgumentMap[argument.name] = argument.value
         }
-        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey("name")) {
+        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME)) {
             throw IllegalArgumentException("Invalid customAnnotation directive")
         }
         val (packageName, simpleName) = parsePackage(
-            (annotationArgumentMap["name"] as StringValue).value,
-            if (annotationArgumentMap.containsKey("type")) (annotationArgumentMap["type"] as StringValue).value else null
+            (annotationArgumentMap[ParserConstants.NAME] as StringValue).value,
+            if (annotationArgumentMap.containsKey(ParserConstants.TYPE)) (annotationArgumentMap[ParserConstants.TYPE] as StringValue).value else null
         )
         val className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
-        if (annotationArgumentMap.containsKey("parameters")) {
+        if (annotationArgumentMap.containsKey(ParserConstants.PARAMETERS)) {
             val codeBlocks: MutableList<CodeBlock> = mutableListOf()
-            codeBlocks.addAll(parseParameter(annotationArgumentMap["parameters"] as ObjectValue))
+            codeBlocks.addAll(parseParameter(annotationArgumentMap[ParserConstants.PARAMETERS] as ObjectValue))
             codeBlocks.forEach { codeBlock ->
                 annotation.addMember(codeBlock)
             }

@@ -1829,6 +1829,46 @@ class KotlinCodeGenTest {
     }
 
     @Test
+    fun validationOnTypesWithMultipleAnnotations() {
+        val schema = """
+            type Person @customAnnotation(name: "ValidPerson", type: "validator", parameters: {types: [HUSBAND, WIFE]}) {
+                name: String @customAnnotation(name: "com.test.anotherValidator.ValidName"), @customAnnotation(name: "com.test.nullValidator.NullValue")
+            }
+        """.trimIndent()
+
+        val dataTypes = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                language = Language.KOTLIN,
+                includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("types", "com.enums"))
+            )
+        ).generate().kotlinDataTypes
+        assertThat(dataTypes[0].toString()).isEqualTo(
+            """
+                |package com.netflix.graphql.dgs.codegen.tests.generated.types
+                |
+                |import com.fasterxml.jackson.`annotation`.JsonProperty
+                |import com.test.anotherValidator.ValidName
+                |import com.test.nullValidator.NullValue
+                |import com.test.validator.ValidPerson
+                |import kotlin.String
+                |
+                |@ValidPerson(types = [com.enums.HUSBAND, com.enums.WIFE])
+                |public data class Person(
+                |  @JsonProperty("name")
+                |  @ValidName
+                |  @NullValue
+                |  public val name: String? = null
+                |) {
+                |  public companion object
+                |}
+
+        """.trimMargin()
+        )
+    }
+
+    @Test
     fun skipCodegenOnFields() {
         val schema = """
             type Person {
