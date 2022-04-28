@@ -145,22 +145,23 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     /**
      * Generates the code block containing the parameters of an annotation in the format key = value
      */
-    private fun generateCode(value: Value<Value<*>>, prefix: String = ""): CodeBlock =
+    private fun generateCode(value: Value<Value<*>>, prefix: String = "", enumType: String = ""): CodeBlock =
         when (value) {
             is BooleanValue -> CodeBlock.of("$prefix%L", (value as BooleanValue).isValue)
             is IntValue -> CodeBlock.of("$prefix%L", (value as IntValue).value)
             is StringValue -> CodeBlock.of("$prefix%S", (value as StringValue).value)
             is FloatValue -> CodeBlock.of("$prefix%L", (value as FloatValue).value)
+            // If an enum value the prefix/enumType (key in the parameters map for the enum) is used to get the package name from the config
             is EnumValue -> CodeBlock.of(
                 "$prefix%M",
                 MemberName(
-                    config.includeImports.getOrDefault(prefix.substringBefore(" = "), ""),
+                    if (prefix.isNotEmpty()) config.includeImports.getOrDefault(prefix.substringBefore(" = "), "") else config.includeImports.getOrDefault(enumType.substringBefore(" = "), ""),
                     (value as EnumValue).name
                 )
             )
             is ArrayValue ->
                 if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("emptyList()")
-                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(v).toString() })
+                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(value = v, enumType = if (v is EnumValue) prefix else "").toString() })
             else -> CodeBlock.of("$prefix%L", value)
         }
 
