@@ -1713,8 +1713,8 @@ class KotlinCodeGenTest {
     @Test
     fun validationOnTypesWithDefaultPackage() {
         val schema = """
-            type Person @customAnnotation(name: "ValidPerson", type: "validator", maxLimit: 10, types: ["husband", "wife"]) {
-                name: String @customAnnotation(name: "com.test.anotherValidator.ValidName", type: "validator")
+            type Person @customAnnotation(name: "ValidPerson", type: "validator", parameters: {maxLimit: 10, types: ["husband", "wife"]}) {
+                name: String @customAnnotation(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()
 

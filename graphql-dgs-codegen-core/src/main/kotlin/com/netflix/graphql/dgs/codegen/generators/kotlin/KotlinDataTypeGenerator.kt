@@ -142,6 +142,9 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         document = document
     )
 
+    /**
+     * Generates the code block containing the parameters of an annotation in the format key = value
+     */
     private fun generateCode(value: Value<Value<*>>, className: ClassName?, prefix: String? = ""): CodeBlock =
         when (value) {
             is BooleanValue -> CodeBlock.of("$prefix%L", (value as BooleanValue).isValue)
@@ -155,18 +158,28 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
             else -> CodeBlock.of("$prefix%L", value)
         }
 
-    private fun parseParameter(objectValue: ObjectValue): List<CodeBlock> {
-        val objectFields: List<ObjectField> = objectValue.objectFields
-        var codeBlocks: MutableList<CodeBlock> = mutableListOf()
+    /**
+     * Parses the parameters argument in the directive to get the input parameters of the annotation
+     */
+    private fun parseParameter(parameters: ObjectValue): List<CodeBlock> {
+        val objectFields: List<ObjectField> = parameters.objectFields
+        val codeBlocks: MutableList<CodeBlock> = mutableListOf()
         objectFields.forEach() { objectField ->
-            val className: ClassName? = if (objectField.value is EnumValue) ClassName(packageName = (objectField.value as EnumValue).name, simpleNames = listOf((objectField.value as EnumValue).name)) else null
+            var className: ClassName? = null
+            if (objectField.value is EnumValue) {
+                val (packageName, simpleName) = parsePackage((objectField.value as EnumValue).name)
+                className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
+            }
             codeBlocks.add(generateCode(objectField.value, className, objectField.name + " = "))
         }
         return codeBlocks
     }
 
+    /**
+     * Applies directives like customAnnotation
+     */
     private fun applyDirectives(directives: List<Directive>): MutableList<AnnotationSpec> {
-        var annotations: MutableList<AnnotationSpec> = mutableListOf()
+        val annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
             if (directive.name == "customAnnotation") {
                 annotations.add(createCustomAnnotation(directive))
@@ -175,34 +188,59 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         return annotations
     }
 
+    /**
+     * Parses the packge value in the directive.
+     * If not present uses the default package in the config for that particular type of annotation.
+     * If neither of them are supplied the package name will be an empty String
+     * Also parses the  simpleName/className from the name argument in the directive
+     */
+    private fun parsePackage(name: String, type: String? = null): Pair<String, String> {
+        val configPackageName = config.includeImports.getOrDefault(type, "")
+        var packageName = name.substringBeforeLast(".", "")
+        packageName = if (packageName.isEmpty()) configPackageName else packageName
+        return packageName to name.substringAfterLast(".")
+    }
+
+    /**
+     * Creates custom annotation with arguments
+     * name -> Name of the class to be annotated. It will contain className with oor without the package name (Mandatory)
+     * type -> The type of operation intended with this annotation. This value is also used to look up if there is any default packages associated with this annotation in the config
+     * parameters -> These are the input parameter needed for the annotation. If empty no parameters will be present for the annotation
+     */
     private fun createCustomAnnotation(directive: Directive): AnnotationSpec {
-        if (directive.arguments.isEmpty() || directive.arguments.size < 2 || directive.arguments[0].name != "name" || directive.arguments[1].name != "type") {
+        val annotationArgumentMap: MutableMap<String, Value<Value<*>>> = mutableMapOf()
+        directive.arguments.forEach { argument ->
+            annotationArgumentMap[argument.name] = argument.value
+        }
+        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey("name")) {
             throw IllegalArgumentException("Invalid customAnnotation directive")
         }
-        val wholePackageName = (directive.arguments[0].value as StringValue).value
-        val configPackageName = config.includeImports.getOrDefault((directive.arguments[1].value as StringValue).value, "")
-        val packageName = if (wholePackageName.substringBeforeLast(".", "").isEmpty()) configPackageName else wholePackageName.substringBeforeLast(".")
-        val simpleName = wholePackageName.substringAfterLast(".")
-        val className: ClassName = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
+        val (packageName, simpleName) = parsePackage(
+            (annotationArgumentMap["name"] as StringValue).value,
+            if (annotationArgumentMap.containsKey("type")) (annotationArgumentMap["type"] as StringValue).value else null
+        )
+        val className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
-        if (directive.arguments.size > 1) {
-            directive.arguments.forEach { argument ->
-                var codeBlocks: MutableList<CodeBlock> = mutableListOf()
-                if (argument.name == "parameters") {
-                    codeBlocks.addAll(parseParameter(argument.value as ObjectValue))
-                }
-                codeBlocks.forEach { codeBlock ->
-                    annotation.addMember(codeBlock)
-                }
+        if (annotationArgumentMap.containsKey("parameters")) {
+            val codeBlocks: MutableList<CodeBlock> = mutableListOf()
+            codeBlocks.addAll(parseParameter(annotationArgumentMap["parameters"] as ObjectValue))
+            codeBlocks.forEach { codeBlock ->
+                annotation.addMember(codeBlock)
             }
         }
         return annotation.build()
     }
 
+    /**
+     * Applies the directives on a field
+     */
     private fun applyDirectives(directives: List<Directive>, parameterSpec: ParameterSpec.Builder) {
         parameterSpec.addAnnotations(applyDirectives(directives))
     }
 
+    /**
+     * Applies the directives on a graphQL input or type
+     */
     private fun applyDirectives(directives: List<Directive>, typeSpec: TypeSpec.Builder) {
         typeSpec.addAnnotations(applyDirectives(directives))
     }
