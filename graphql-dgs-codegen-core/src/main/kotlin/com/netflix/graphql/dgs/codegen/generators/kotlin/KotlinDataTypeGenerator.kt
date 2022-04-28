@@ -155,27 +155,28 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
             else -> CodeBlock.of("$prefix%L", value)
         }
 
-    private fun createAnnotations(directives: List<Directive>): MutableList<AnnotationSpec> {
+    private fun applyDirectives(directives: List<Directive>): MutableList<AnnotationSpec> {
         var annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
-            if (directive.name == "validate") {
-                annotations.add(createAnnotation(directive, config.includeImports.getOrDefault("validatorPackage", "")))
+            if (directive.name == "customAnnotation") {
+                annotations.add(createCustomAnnotation(directive))
             }
         }
         return annotations
     }
 
-    private fun createAnnotation(directive: Directive, configPackageName: String): AnnotationSpec {
-        if (directive.arguments.isEmpty() || directive.arguments[0].name != "name") {
-            throw IllegalArgumentException("Invalid validate directive")
+    private fun createCustomAnnotation(directive: Directive): AnnotationSpec {
+        if (directive.arguments.isEmpty() || directive.arguments.size < 2 || directive.arguments[0].name != "name" || directive.arguments[1].name != "type") {
+            throw IllegalArgumentException("Invalid customAnnotation directive")
         }
         val wholePackageName = (directive.arguments[0].value as StringValue).value
+        val configPackageName = config.includeImports.getOrDefault((directive.arguments[1].value as StringValue).value, "")
         val packageName = if (wholePackageName.substringBeforeLast(".", "").isEmpty()) configPackageName else wholePackageName.substringBeforeLast(".")
         val simpleName = wholePackageName.substringAfterLast(".")
         val className: ClassName = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
         if (directive.arguments.size > 1) {
-            directive.arguments.drop(1).forEach { argument ->
+            directive.arguments.drop(2).forEach { argument ->
                 val className: ClassName? = if (argument.value is EnumValue) ClassName(packageName = (argument.value as EnumValue).name, simpleNames = listOf((argument.value as EnumValue).name)) else null
                 val codeBlock: CodeBlock = generateCode(argument.value, className, argument.name + " = ")
                 annotation.addMember(codeBlock)
@@ -185,11 +186,11 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     }
 
     private fun applyDirectives(directives: List<Directive>, parameterSpec: ParameterSpec.Builder) {
-        parameterSpec.addAnnotations(createAnnotations(directives))
+        parameterSpec.addAnnotations(applyDirectives(directives))
     }
 
     private fun applyDirectives(directives: List<Directive>, typeSpec: TypeSpec.Builder) {
-        typeSpec.addAnnotations(createAnnotations(directives))
+        typeSpec.addAnnotations(applyDirectives(directives))
     }
 
     internal fun generate(

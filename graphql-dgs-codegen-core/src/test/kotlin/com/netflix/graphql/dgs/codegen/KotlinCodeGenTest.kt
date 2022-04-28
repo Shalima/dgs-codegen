@@ -1673,8 +1673,8 @@ class KotlinCodeGenTest {
     @Test
     fun validationOnTypes() {
         val schema = """
-            type Person @validate(name: "ValidPerson", maxLimit: 10, types: ["husband", "wife"]) {
-                name: String @validate(name: "ValidName")
+            type Person @customAnnotation(name: "ValidPerson", type: "validator", maxLimit: 10, types: ["husband", "wife"]) {
+                name: String @customAnnotation(name: "ValidName", type: "validator")
             }
         """.trimIndent()
 
@@ -1713,8 +1713,8 @@ class KotlinCodeGenTest {
     @Test
     fun validationOnTypesWithDefaultPackage() {
         val schema = """
-            type Person @validate(name: "ValidPerson", maxLimit: 10, types: ["husband", "wife"]) {
-                name: String @validate(name: "com.test.anotherValidator.ValidName")
+            type Person @customAnnotation(name: "ValidPerson", type: "validator", maxLimit: 10, types: ["husband", "wife"]) {
+                name: String @customAnnotation(name: "com.test.anotherValidator.ValidName", type: "validator")
             }
         """.trimIndent()
 
@@ -1723,7 +1723,7 @@ class KotlinCodeGenTest {
                 schemas = setOf(schema),
                 packageName = basePackageName,
                 language = Language.KOTLIN,
-                includeImports = mapOf(Pair("validatorPackage", "com.test.validator"))
+                includeImports = mapOf(Pair("validator", "com.test.validator"))
             )
         ).generate().kotlinDataTypes
         assertThat(dataTypes[0].toString()).isEqualTo(
