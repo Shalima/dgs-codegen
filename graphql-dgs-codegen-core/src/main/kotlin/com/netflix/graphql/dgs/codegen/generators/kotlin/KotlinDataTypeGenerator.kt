@@ -91,10 +91,10 @@ class KotlinInputTypeGenerator(config: CodeGenConfig, document: Document) :
             .map {
                 val type = typeUtils.findReturnType(it.type)
                 val defaultValue = it.defaultValue?.let { value -> generateCode(value, type) }
-                Field(name = it.name, type = type, nullable = typeUtils.isNullable(it.type), default = defaultValue, description = it.description)
+                Field(name = it.name, type = type, nullable = typeUtils.isNullable(it.type), default = defaultValue, description = it.description, directives = it.directives)
             }.plus(
                 extensions.flatMap { it.inputValueDefinitions }.map {
-                    Field(name = it.name, type = typeUtils.findReturnType(it.type), nullable = typeUtils.isNullable(it.type), default = null, description = it.description)
+                    Field(name = it.name, type = typeUtils.findReturnType(it.type), nullable = typeUtils.isNullable(it.type), default = null, description = it.description, directives = it.directives)
                 }
             )
         val interfaces = emptyList<Type<*>>()
