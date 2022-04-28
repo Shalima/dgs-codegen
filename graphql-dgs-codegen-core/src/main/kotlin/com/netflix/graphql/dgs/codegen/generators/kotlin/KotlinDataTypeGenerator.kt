@@ -147,7 +147,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         const val TYPE = "type"
         const val NAME = "name"
         const val CUSTOM_ANNOTATION = "annotate"
-        const val PARAMETERS = "parameters"
+        const val INPUTS = "inputs"
         const val DOT = "."
     }
 
@@ -218,7 +218,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
      * Creates custom annotation with arguments
      * name -> Name of the class to be annotated. It will contain className with oor without the package name (Mandatory)
      * type -> The type of operation intended with this annotation. This value is also used to look up if there is any default packages associated with this annotation in the config
-     * parameters -> These are the input parameter needed for the annotation. If empty no parameters will be present for the annotation
+     * inputs -> These are the input parameters needed for the annotation. If empty no inputs will be present for the annotation
      */
     private fun createCustomAnnotation(directive: Directive): AnnotationSpec {
         val annotationArgumentMap: MutableMap<String, Value<Value<*>>> = mutableMapOf()
@@ -234,9 +234,9 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         )
         val className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
-        if (annotationArgumentMap.containsKey(ParserConstants.PARAMETERS)) {
+        if (annotationArgumentMap.containsKey(ParserConstants.INPUTS)) {
             val codeBlocks: MutableList<CodeBlock> = mutableListOf()
-            codeBlocks.addAll(parseParameter(annotationArgumentMap[ParserConstants.PARAMETERS] as ObjectValue))
+            codeBlocks.addAll(parseParameter(annotationArgumentMap[ParserConstants.INPUTS] as ObjectValue))
             codeBlocks.forEach { codeBlock ->
                 annotation.addMember(codeBlock)
             }

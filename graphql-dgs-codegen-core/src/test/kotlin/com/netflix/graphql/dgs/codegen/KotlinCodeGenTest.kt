@@ -1671,9 +1671,9 @@ class KotlinCodeGenTest {
     }
 
     @Test
-    fun validationOnTypes() {
+    fun annotateOnTypes() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", parameters: {maxLimit: 10, types: ["husband", "wife"]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {maxLimit: 10, types: ["husband", "wife"]}) {
                 name: String @annotate(name: "ValidName", type: "validator")
             }
         """.trimIndent()
@@ -1711,9 +1711,9 @@ class KotlinCodeGenTest {
     }
 
     @Test
-    fun validationOnTypesWithDefaultPackage() {
+    fun annotateOnTypesWithDefaultPackage() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", parameters: {maxLimit: 10, types: ["husband", "wife"]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {maxLimit: 10, types: ["husband", "wife"]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()
@@ -1752,9 +1752,9 @@ class KotlinCodeGenTest {
     }
 
     @Test
-    fun validationOnTypesWithEnums() {
+    fun annotateOnTypesWithEnums() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", parameters: {sexType: MALE}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {sexType: MALE}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()
@@ -1791,9 +1791,9 @@ class KotlinCodeGenTest {
     }
 
     @Test
-    fun validationOnTypesWithListOfEnums() {
+    fun annotateOnTypesWithListOfEnums() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", parameters: {types: [HUSBAND, WIFE]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {types: [HUSBAND, WIFE]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()
@@ -1829,9 +1829,9 @@ class KotlinCodeGenTest {
     }
 
     @Test
-    fun validationOnTypesWithMultipleAnnotations() {
+    fun annotateOnTypesWithMultipleAnnotations() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", parameters: {types: [HUSBAND, WIFE]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {types: [HUSBAND, WIFE]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName"), @annotate(name: "com.test.nullValidator.NullValue")
             }
         """.trimIndent()
@@ -1866,6 +1866,26 @@ class KotlinCodeGenTest {
 
         """.trimMargin()
         )
+    }
+
+    @Test
+    fun annotateOnTypesWithoutName() {
+        val schema = """
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {types: [HUSBAND, WIFE]}) {
+                name: String @annotate
+            }
+        """.trimIndent()
+
+        assertThrows<IllegalArgumentException> {
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = basePackageName,
+                    language = Language.KOTLIN,
+                    includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("types", "com.enums"))
+                )
+            ).generate()
+        }
     }
 
     @Test
