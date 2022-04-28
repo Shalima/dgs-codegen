@@ -155,6 +155,16 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
             else -> CodeBlock.of("$prefix%L", value)
         }
 
+    private fun parseParameter(objectValue: ObjectValue): List<CodeBlock> {
+        val objectFields: List<ObjectField> = objectValue.objectFields
+        var codeBlocks: MutableList<CodeBlock> = mutableListOf()
+        objectFields.forEach() { objectField ->
+            val className: ClassName? = if (objectField.value is EnumValue) ClassName(packageName = (objectField.value as EnumValue).name, simpleNames = listOf((objectField.value as EnumValue).name)) else null
+            codeBlocks.add(generateCode(objectField.value, className, objectField.name + " = "))
+        }
+        return codeBlocks
+    }
+
     private fun applyDirectives(directives: List<Directive>): MutableList<AnnotationSpec> {
         var annotations: MutableList<AnnotationSpec> = mutableListOf()
         directives.forEach { directive ->
@@ -176,10 +186,14 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         val className: ClassName = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
         if (directive.arguments.size > 1) {
-            directive.arguments.drop(2).forEach { argument ->
-                val className: ClassName? = if (argument.value is EnumValue) ClassName(packageName = (argument.value as EnumValue).name, simpleNames = listOf((argument.value as EnumValue).name)) else null
-                val codeBlock: CodeBlock = generateCode(argument.value, className, argument.name + " = ")
-                annotation.addMember(codeBlock)
+            directive.arguments.forEach { argument ->
+                var codeBlocks: MutableList<CodeBlock> = mutableListOf()
+                if (argument.name == "parameters") {
+                    codeBlocks.addAll(parseParameter(argument.value as ObjectValue))
+                }
+                codeBlocks.forEach { codeBlock ->
+                    annotation.addMember(codeBlock)
+                }
             }
         }
         return annotation.build()
