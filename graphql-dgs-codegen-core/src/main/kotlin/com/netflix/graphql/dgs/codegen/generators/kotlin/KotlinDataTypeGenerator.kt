@@ -225,7 +225,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         directive.arguments.forEach { argument ->
             annotationArgumentMap[argument.name] = argument.value
         }
-        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME)) {
+        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
             throw IllegalArgumentException("Invalid customAnnotation directive")
         }
         val (packageName, simpleName) = parsePackage(

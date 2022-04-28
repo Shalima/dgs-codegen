@@ -1889,6 +1889,26 @@ class KotlinCodeGenTest {
     }
 
     @Test
+    fun annotateOnTypesWithEmptyName() {
+        val schema = """
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {types: [HUSBAND, WIFE]}) {
+                name: String @annotate(name: "")
+            }
+        """.trimIndent()
+
+        assertThrows<IllegalArgumentException> {
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = basePackageName,
+                    language = Language.KOTLIN,
+                    includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("types", "com.enums"))
+                )
+            ).generate()
+        }
+    }
+
+    @Test
     fun skipCodegenOnFields() {
         val schema = """
             type Person {
