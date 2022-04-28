@@ -145,16 +145,22 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     /**
      * Generates the code block containing the parameters of an annotation in the format key = value
      */
-    private fun generateCode(value: Value<Value<*>>, className: ClassName?, prefix: String? = ""): CodeBlock =
+    private fun generateCode(value: Value<Value<*>>, prefix: String = ""): CodeBlock =
         when (value) {
             is BooleanValue -> CodeBlock.of("$prefix%L", (value as BooleanValue).isValue)
             is IntValue -> CodeBlock.of("$prefix%L", (value as IntValue).value)
             is StringValue -> CodeBlock.of("$prefix%S", (value as StringValue).value)
             is FloatValue -> CodeBlock.of("$prefix%L", (value as FloatValue).value)
-            is EnumValue -> CodeBlock.of("$prefix%M", className?.let { MemberName(it, (value as EnumValue).name) })
+            is EnumValue -> CodeBlock.of(
+                "$prefix%M",
+                MemberName(
+                    config.includeImports.getOrDefault(prefix.substringBefore(" = "), ""),
+                    (value as EnumValue).name
+                )
+            )
             is ArrayValue ->
                 if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("emptyList()")
-                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(v, className).toString() })
+                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(v).toString() })
             else -> CodeBlock.of("$prefix%L", value)
         }
 
@@ -165,12 +171,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         val objectFields: List<ObjectField> = parameters.objectFields
         val codeBlocks: MutableList<CodeBlock> = mutableListOf()
         objectFields.forEach() { objectField ->
-            var className: ClassName? = null
-            if (objectField.value is EnumValue) {
-                val (packageName, simpleName) = parsePackage((objectField.value as EnumValue).name)
-                className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
-            }
-            codeBlocks.add(generateCode(objectField.value, className, objectField.name + " = "))
+            codeBlocks.add(generateCode(objectField.value, objectField.name + " = "))
         }
         return codeBlocks
     }

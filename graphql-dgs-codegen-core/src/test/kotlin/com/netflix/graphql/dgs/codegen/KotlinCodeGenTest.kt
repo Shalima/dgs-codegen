@@ -1752,6 +1752,45 @@ class KotlinCodeGenTest {
     }
 
     @Test
+    fun validationOnTypesWithEnums() {
+        val schema = """
+            type Person @customAnnotation(name: "ValidPerson", type: "validator", parameters: {sexType: MALE}) {
+                name: String @customAnnotation(name: "com.test.anotherValidator.ValidName")
+            }
+        """.trimIndent()
+
+        val dataTypes = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                language = Language.KOTLIN,
+                includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("sexType", "com.enums"))
+            )
+        ).generate().kotlinDataTypes
+        assertThat(dataTypes[0].toString()).isEqualTo(
+            """
+                |package com.netflix.graphql.dgs.codegen.tests.generated.types
+                |
+                |import com.enums.MALE
+                |import com.fasterxml.jackson.`annotation`.JsonProperty
+                |import com.test.anotherValidator.ValidName
+                |import com.test.validator.ValidPerson
+                |import kotlin.String
+                |
+                |@ValidPerson(sexType = MALE)
+                |public data class Person(
+                |  @JsonProperty("name")
+                |  @ValidName
+                |  public val name: String? = null
+                |) {
+                |  public companion object
+                |}
+
+        """.trimMargin()
+        )
+    }
+
+    @Test
     fun skipCodegenOnFields() {
         val schema = """
             type Person {
