@@ -146,7 +146,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         const val ASSIGNMENT_OPERATOR = " = "
         const val TYPE = "type"
         const val NAME = "name"
-        const val CUSTOM_ANNOTATION = "customAnnotation"
+        const val CUSTOM_ANNOTATION = "annotate"
         const val PARAMETERS = "parameters"
         const val DOT = "."
     }
