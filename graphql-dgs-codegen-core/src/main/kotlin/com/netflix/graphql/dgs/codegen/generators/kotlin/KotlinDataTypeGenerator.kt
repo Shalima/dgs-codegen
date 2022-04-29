@@ -215,7 +215,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     }
 
     /**
-     * Creates custom annotation with arguments
+     * Creates custom annotation from arguments
      * name -> Name of the class to be annotated. It will contain className with oor without the package name (Mandatory)
      * type -> The type of operation intended with this annotation. This value is also used to look up if there is any default packages associated with this annotation in the config
      * inputs -> These are the input parameters needed for the annotation. If empty no inputs will be present for the annotation
