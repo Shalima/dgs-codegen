@@ -177,10 +177,10 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         }
 
     /**
-     * Parses the parameters argument in the directive to get the input parameters of the annotation
+     * Parses the inputs argument in the directive to get the input parameters of the annotation
      */
-    private fun parseParameter(parameters: ObjectValue): List<CodeBlock> {
-        val objectFields: List<ObjectField> = parameters.objectFields
+    private fun parseInputs(inputs: ObjectValue): List<CodeBlock> {
+        val objectFields: List<ObjectField> = inputs.objectFields
         val codeBlocks: MutableList<CodeBlock> = mutableListOf()
         objectFields.forEach() { objectField ->
             codeBlocks.add(generateCode(objectField.value, objectField.name + ParserConstants.ASSIGNMENT_OPERATOR))
@@ -226,7 +226,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
             annotationArgumentMap[argument.name] = argument.value
         }
         if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
-            throw IllegalArgumentException("Invalid customAnnotation directive")
+            throw IllegalArgumentException("Invalid annotate directive")
         }
         val (packageName, simpleName) = parsePackage(
             (annotationArgumentMap[ParserConstants.NAME] as StringValue).value,
@@ -236,7 +236,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
         if (annotationArgumentMap.containsKey(ParserConstants.INPUTS)) {
             val codeBlocks: MutableList<CodeBlock> = mutableListOf()
-            codeBlocks.addAll(parseParameter(annotationArgumentMap[ParserConstants.INPUTS] as ObjectValue))
+            codeBlocks.addAll(parseInputs(annotationArgumentMap[ParserConstants.INPUTS] as ObjectValue))
             codeBlocks.forEach { codeBlock ->
                 annotation.addMember(codeBlock)
             }
