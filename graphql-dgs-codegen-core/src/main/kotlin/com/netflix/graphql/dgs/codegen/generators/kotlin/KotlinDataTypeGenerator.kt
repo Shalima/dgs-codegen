@@ -225,12 +225,12 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         directive.arguments.forEach { argument ->
             annotationArgumentMap[argument.name] = argument.value
         }
-        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
+        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || annotationArgumentMap[ParserConstants.NAME] is NullValue || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
             throw IllegalArgumentException("Invalid annotate directive")
         }
         val (packageName, simpleName) = parsePackage(
             (annotationArgumentMap[ParserConstants.NAME] as StringValue).value,
-            if (annotationArgumentMap.containsKey(ParserConstants.TYPE)) (annotationArgumentMap[ParserConstants.TYPE] as StringValue).value else null
+            if (annotationArgumentMap.containsKey(ParserConstants.TYPE) && annotationArgumentMap[ParserConstants.TYPE] !is NullValue) (annotationArgumentMap[ParserConstants.TYPE] as StringValue).value else null
         )
         val className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)

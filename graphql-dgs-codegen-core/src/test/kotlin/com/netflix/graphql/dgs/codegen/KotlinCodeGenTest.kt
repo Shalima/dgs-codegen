@@ -1751,6 +1751,65 @@ class KotlinCodeGenTest {
     }
 
     @Test
+    fun annotateWithNullType() {
+        val schema = """
+            type Person @annotate(name: "com.validator.ValidPerson", type: null, inputs: {maxLimit: 10, types: ["husband", "wife"]}) {
+                name: String @annotate(name: "ValidName", type: "validator")
+            }
+        """.trimIndent()
+
+        val dataTypes = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                language = Language.KOTLIN
+            )
+        ).generate().kotlinDataTypes
+        assertThat(dataTypes[0].toString()).isEqualTo(
+            """
+                |package com.netflix.graphql.dgs.codegen.tests.generated.types
+                |
+                |import ValidName
+                |import com.fasterxml.jackson.`annotation`.JsonProperty
+                |import com.validator.ValidPerson
+                |import kotlin.String
+                |
+                |@ValidPerson(
+                |  maxLimit = 10,
+                |  types = ["husband", "wife"]
+                |)
+                |public data class Person(
+                |  @JsonProperty("name")
+                |  @ValidName
+                |  public val name: String? = null
+                |) {
+                |  public companion object
+                |}
+
+        """.trimMargin()
+        )
+    }
+
+    @Test
+    fun annotateWithNullName() {
+        val schema = """
+            type Person @annotate(name: "com.validator.ValidPerson", type: null, inputs: {maxLimit: 10, types: ["husband", "wife"]}) {
+                name: String @annotate(name: null, type: "validator")
+            }
+        """.trimIndent()
+
+        assertThrows<IllegalArgumentException> {
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = basePackageName,
+                    language = Language.KOTLIN
+                )
+            ).generate()
+        }
+    }
+
+    @Test
     fun annotateOnTypesWithDefaultPackage() {
         val schema = """
             type Person @annotate(name: "ValidPerson", type: "validator", inputs: {maxLimit: 10, types: ["husband", "wife"]}) {
