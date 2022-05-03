@@ -208,9 +208,8 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
      * Also parses the  simpleName/className from the name argument in the directive
      */
     private fun parsePackage(name: String, type: String? = null): Pair<String, String> {
-        val configPackageName = config.includeImports.getOrDefault(type, "")
         var packageName = name.substringBeforeLast(".", "")
-        packageName = if (packageName.isEmpty()) configPackageName else packageName
+        packageName = if (packageName.isEmpty() && type != null) config.includeImports.getOrDefault(type, "") else packageName
         return packageName to name.substringAfterLast(".")
     }
 
