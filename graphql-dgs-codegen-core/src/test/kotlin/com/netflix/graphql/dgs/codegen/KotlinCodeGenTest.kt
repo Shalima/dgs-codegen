@@ -2010,7 +2010,7 @@ class KotlinCodeGenTest {
     fun annotateOnTypesWithMultipleAnnotations() {
         val schema = """
             type Person @annotate(name: "ValidPerson", type: "validator", inputs: {types: [HUSBAND, WIFE]}) {
-                name: String @annotate(name: "com.test.anotherValidator.ValidName"), @annotate(name: "com.test.nullValidator.NullValue")
+                name: String @annotate(name: "com.test.anotherValidator.ValidName") @annotate(name: "com.test.nullValidator.NullValue")
             }
         """.trimIndent()
 

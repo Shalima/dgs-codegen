@@ -181,24 +181,23 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
      */
     private fun parseInputs(inputs: ObjectValue): List<CodeBlock> {
         val objectFields: List<ObjectField> = inputs.objectFields
-        val codeBlocks: MutableList<CodeBlock> = mutableListOf()
-        objectFields.forEach() { objectField ->
+        return objectFields.fold(mutableListOf(), {
+            codeBlocks, objectField ->
             codeBlocks.add(generateCode(objectField.value, objectField.name + ParserConstants.ASSIGNMENT_OPERATOR))
-        }
-        return codeBlocks
+            codeBlocks
+        })
     }
 
     /**
      * Applies directives like customAnnotation
      */
     private fun applyDirectives(directives: List<Directive>): MutableList<AnnotationSpec> {
-        val annotations: MutableList<AnnotationSpec> = mutableListOf()
-        directives.forEach { directive ->
-            if (directive.name == ParserConstants.CUSTOM_ANNOTATION) {
+        return directives.fold(mutableListOf(), {
+            annotations, directive ->
+            if (directive.name == ParserConstants.CUSTOM_ANNOTATION)
                 annotations.add(createCustomAnnotation(directive))
-            }
-        }
-        return annotations
+            annotations
+        })
     }
 
     /**
@@ -220,10 +219,11 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
      * inputs -> These are the input parameters needed for the annotation. If empty no inputs will be present for the annotation
      */
     private fun createCustomAnnotation(directive: Directive): AnnotationSpec {
-        val annotationArgumentMap: MutableMap<String, Value<Value<*>>> = mutableMapOf()
-        directive.arguments.forEach { argument ->
-            annotationArgumentMap[argument.name] = argument.value
-        }
+        val annotationArgumentMap = directive.arguments.fold(mutableMapOf<String, Value<Value<*>>>(), {
+            argMap, argument ->
+            argMap[argument.name] = argument.value
+            argMap
+        })
         if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || annotationArgumentMap[ParserConstants.NAME] is NullValue || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
             throw IllegalArgumentException("Invalid annotate directive")
         }
@@ -234,8 +234,7 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         val className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
         val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
         if (annotationArgumentMap.containsKey(ParserConstants.INPUTS)) {
-            val codeBlocks: MutableList<CodeBlock> = mutableListOf()
-            codeBlocks.addAll(parseInputs(annotationArgumentMap[ParserConstants.INPUTS] as ObjectValue))
+            val codeBlocks: List<CodeBlock> = parseInputs(annotationArgumentMap[ParserConstants.INPUTS] as ObjectValue)
             codeBlocks.forEach { codeBlock ->
                 annotation.addMember(codeBlock)
             }
