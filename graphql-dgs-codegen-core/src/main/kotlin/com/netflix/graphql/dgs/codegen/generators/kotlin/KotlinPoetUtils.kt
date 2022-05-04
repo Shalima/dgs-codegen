@@ -108,6 +108,12 @@ fun jsonPropertyAnnotation(name: String): AnnotationSpec {
         .build()
 }
 
+fun deprecatedAnnotation(reason: String): AnnotationSpec {
+    return AnnotationSpec.builder(Deprecated::class)
+        .addMember("%S", reason)
+        .build()
+}
+
 fun Description.sanitizeKdoc(): String {
     return this.content.lineSequence().joinToString("\n")
 }

@@ -146,7 +146,9 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
         const val ASSIGNMENT_OPERATOR = " = "
         const val TYPE = "type"
         const val NAME = "name"
+        const val REASON = "reason"
         const val CUSTOM_ANNOTATION = "annotate"
+        const val DEPRECATED = "deprecated"
         const val INPUTS = "inputs"
         const val DOT = "."
     }
@@ -154,25 +156,25 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     /**
      * Generates the code block containing the parameters of an annotation in the format key = value
      */
-    private fun generateCode(value: Value<Value<*>>, prefix: String = "", enumType: String = ""): CodeBlock =
+    private fun generateCode(value: Value<Value<*>>, prefix: String = "", type: String = ""): CodeBlock =
         when (value) {
             is BooleanValue -> CodeBlock.of("$prefix%L", (value as BooleanValue).isValue)
             is IntValue -> CodeBlock.of("$prefix%L", (value as IntValue).value)
             is StringValue -> CodeBlock.of("$prefix%S", (value as StringValue).value)
             is FloatValue -> CodeBlock.of("$prefix%L", (value as FloatValue).value)
-            // If an enum value the prefix/enumType (key in the parameters map for the enum) is used to get the package name from the config
+            // If an enum value the prefix/type (key in the parameters map for the enum) is used to get the package name from the config
             // Limitation: Since it uses the enum key to lookup the package from the configs. 2 enums using different packages cannot have the same keys.
             is EnumValue -> CodeBlock.of(
                 "$prefix%M",
                 MemberName(
                     if (prefix.isNotEmpty()) config.includeImports.getOrDefault(prefix.substringBefore(ParserConstants.ASSIGNMENT_OPERATOR), "")
-                    else config.includeImports.getOrDefault(enumType.substringBefore(ParserConstants.ASSIGNMENT_OPERATOR), ""),
+                    else config.includeImports.getOrDefault(type.substringBefore(ParserConstants.ASSIGNMENT_OPERATOR), ""),
                     (value as EnumValue).name
                 )
             )
             is ArrayValue ->
                 if ((value as ArrayValue).values.isEmpty()) CodeBlock.of("[]")
-                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(value = v, enumType = if (v is EnumValue) prefix else "").toString() })
+                else CodeBlock.of("$prefix[%L]", (value as ArrayValue).values.joinToString { v -> generateCode(value = v, type = if (v is EnumValue) prefix else "").toString() })
             else -> CodeBlock.of("$prefix%L", value)
         }
 
@@ -189,13 +191,31 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
     }
 
     /**
+     * Creates an argument map of the input Arguments
+     */
+    private fun createArgumentMap(directive: Directive): MutableMap<String, Value<Value<*>>> {
+        return directive.arguments.fold(mutableMapOf(), {
+            argMap, argument ->
+            argMap[argument.name] = argument.value
+            argMap
+        })
+    }
+
+    /**
      * Applies directives like customAnnotation
      */
     private fun applyDirectives(directives: List<Directive>): MutableList<AnnotationSpec> {
         return directives.fold(mutableListOf(), {
             annotations, directive ->
+            val argumentMap = createArgumentMap(directive)
             if (directive.name == ParserConstants.CUSTOM_ANNOTATION)
-                annotations.add(createCustomAnnotation(directive))
+                annotations.add(createCustomAnnotation(argumentMap))
+            if (directive.name == ParserConstants.DEPRECATED)
+                if (argumentMap.containsKey(ParserConstants.REASON))
+                    annotations.add(deprecatedAnnotation((argumentMap[ParserConstants.REASON] as StringValue).value))
+                else
+                    throw IllegalArgumentException("Deprecated requires an argument `${ParserConstants.REASON}`")
+
             annotations
         })
     }
@@ -218,13 +238,8 @@ abstract class AbstractKotlinDataTypeGenerator(packageName: String, protected va
      * type -> The type of operation intended with this annotation. This value is also used to look up if there is any default packages associated with this annotation in the config
      * inputs -> These are the input parameters needed for the annotation. If empty no inputs will be present for the annotation
      */
-    private fun createCustomAnnotation(directive: Directive): AnnotationSpec {
-        val annotationArgumentMap = directive.arguments.fold(mutableMapOf<String, Value<Value<*>>>(), {
-            argMap, argument ->
-            argMap[argument.name] = argument.value
-            argMap
-        })
-        if (directive.arguments.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || annotationArgumentMap[ParserConstants.NAME] is NullValue || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
+    private fun createCustomAnnotation(annotationArgumentMap: MutableMap<String, Value<Value<*>>>): AnnotationSpec {
+        if (annotationArgumentMap.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || annotationArgumentMap[ParserConstants.NAME] is NullValue || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {
             throw IllegalArgumentException("Invalid annotate directive")
         }
         val (packageName, simpleName) = parsePackage(

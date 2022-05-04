@@ -1671,6 +1671,42 @@ class KotlinCodeGenTest {
     }
 
     @Test
+    fun deprecateAnnotation() {
+        val schema = """
+            input Person @deprecated(reason: "This is going bye bye") {
+                name: String @deprecated(reason: "This field is no longer available")
+            }
+        """.trimIndent()
+
+        val dataTypes = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                language = Language.KOTLIN
+            )
+        ).generate().kotlinDataTypes
+        assertThat(dataTypes[0].toString()).isEqualTo(
+            """
+                |package com.netflix.graphql.dgs.codegen.tests.generated.types
+                |
+                |import com.fasterxml.jackson.`annotation`.JsonProperty
+                |import kotlin.Deprecated
+                |import kotlin.String
+                |
+                |@Deprecated("This is going bye bye")
+                |public data class Person(
+                |  @JsonProperty("name")
+                |  @Deprecated("This field is no longer available")
+                |  public val name: String? = null
+                |) {
+                |  public companion object
+                |}
+
+        """.trimMargin()
+        )
+    }
+
+    @Test
     fun annotateOnInput() {
         val schema = """
             input Person @annotate(name: "ValidPerson", type: "validator", inputs: {maxLimit: 10, types: ["husband", "wife"]}) {
@@ -2081,6 +2117,25 @@ class KotlinCodeGenTest {
                     packageName = basePackageName,
                     language = Language.KOTLIN,
                     includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("types", "com.enums"))
+                )
+            ).generate()
+        }
+    }
+
+    @Test
+    fun deprecateAnnotationWithNoMesssage() {
+        val schema = """
+            input Person @deprecated(message: "This is going bye bye") {
+                name: String @deprecated
+            }
+        """.trimIndent()
+
+        assertThrows<IllegalArgumentException> {
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = basePackageName,
+                    language = Language.KOTLIN
                 )
             ).generate()
         }
