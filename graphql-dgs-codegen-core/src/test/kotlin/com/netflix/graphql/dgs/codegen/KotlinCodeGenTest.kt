@@ -1674,7 +1674,7 @@ class KotlinCodeGenTest {
     fun deprecateAnnotation() {
         val schema = """
             input Person @deprecated(reason: "This is going bye bye") {
-                name: String @deprecated(reason: "This field is no longer available")
+                name: String @deprecated(reason: "This field is no longer available, replace with firstName")
             }
         """.trimIndent()
 
@@ -1693,10 +1693,13 @@ class KotlinCodeGenTest {
                 |import kotlin.Deprecated
                 |import kotlin.String
                 |
-                |@Deprecated("This is going bye bye")
+                |@Deprecated(message = "This is going bye bye")
                 |public data class Person(
                 |  @JsonProperty("name")
-                |  @Deprecated("This field is no longer available")
+                |  @Deprecated(
+                |    message = "This field is no longer available",
+                |    replaceWith = "firstName"
+                |  )
                 |  public val name: String? = null
                 |) {
                 |  public companion object

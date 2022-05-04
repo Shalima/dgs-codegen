@@ -37,6 +37,20 @@ import graphql.language.StringValue
 import graphql.language.Value
 import java.lang.IllegalArgumentException
 
+object ParserConstants {
+    const val ASSIGNMENT_OPERATOR = " = "
+    const val TYPE = "type"
+    const val NAME = "name"
+    const val REASON = "reason"
+    const val CUSTOM_ANNOTATION = "annotate"
+    const val DEPRECATED = "deprecated"
+    const val INPUTS = "inputs"
+    const val DOT = "."
+    const val REPLACE_WITH_STR = ", replace with "
+    const val MESSAGE = "message"
+    const val REPLACE_WITH = "replaceWith"
+}
+
 /**
  * Generate a [JsonTypeInfo] annotation, which allows for Jackson
  * polymorphic type handling when deserializing from JSON.
@@ -122,9 +136,13 @@ fun jsonPropertyAnnotation(name: String): AnnotationSpec {
 }
 
 fun deprecatedAnnotation(reason: String): AnnotationSpec {
-    return AnnotationSpec.builder(Deprecated::class)
-        .addMember("%S", reason)
-        .build()
+    val replace = reason.substringAfter(ParserConstants.REPLACE_WITH_STR, "")
+    val builder: AnnotationSpec.Builder = AnnotationSpec.builder(Deprecated::class)
+        .addMember("${ParserConstants.MESSAGE}${ParserConstants.ASSIGNMENT_OPERATOR}%S", reason.substringBefore(ParserConstants.REPLACE_WITH_STR))
+    if (replace.isNotEmpty()) {
+        builder.addMember("${ParserConstants.REPLACE_WITH}${ParserConstants.ASSIGNMENT_OPERATOR}%S", reason.substringAfter(ParserConstants.REPLACE_WITH_STR))
+    }
+    return builder.build()
 }
 
 fun Description.sanitizeKdoc(): String {
@@ -173,17 +191,6 @@ private fun ktTypeClassBestGuess(name: String): ClassName {
         DOUBLE_ARRAY.simpleName -> DOUBLE_ARRAY
         else -> ClassName.bestGuess(name)
     }
-}
-
-object ParserConstants {
-    const val ASSIGNMENT_OPERATOR = " = "
-    const val TYPE = "type"
-    const val NAME = "name"
-    const val REASON = "reason"
-    const val CUSTOM_ANNOTATION = "annotate"
-    const val DEPRECATED = "deprecated"
-    const val INPUTS = "inputs"
-    const val DOT = "."
 }
 
 /**
