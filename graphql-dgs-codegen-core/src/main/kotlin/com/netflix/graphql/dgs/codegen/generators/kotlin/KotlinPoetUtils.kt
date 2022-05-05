@@ -49,6 +49,7 @@ object ParserConstants {
     const val REPLACE_WITH_STR = ", replace with "
     const val MESSAGE = "message"
     const val REPLACE_WITH = "replaceWith"
+    const val REPLACE_WITH_CLASS = "ReplaceWith"
 }
 
 /**
@@ -136,11 +137,12 @@ fun jsonPropertyAnnotation(name: String): AnnotationSpec {
 }
 
 fun deprecatedAnnotation(reason: String): AnnotationSpec {
+    // TODO support for level
     val replace = reason.substringAfter(ParserConstants.REPLACE_WITH_STR, "")
     val builder: AnnotationSpec.Builder = AnnotationSpec.builder(Deprecated::class)
         .addMember("${ParserConstants.MESSAGE}${ParserConstants.ASSIGNMENT_OPERATOR}%S", reason.substringBefore(ParserConstants.REPLACE_WITH_STR))
     if (replace.isNotEmpty()) {
-        builder.addMember("${ParserConstants.REPLACE_WITH}${ParserConstants.ASSIGNMENT_OPERATOR}%S", reason.substringAfter(ParserConstants.REPLACE_WITH_STR))
+        builder.addMember(CodeBlock.of("${ParserConstants.REPLACE_WITH}${ParserConstants.ASSIGNMENT_OPERATOR}%M(%S)", MemberName("kotlin", ParserConstants.REPLACE_WITH_CLASS), reason.substringAfter(ParserConstants.REPLACE_WITH_STR)))
     }
     return builder.build()
 }

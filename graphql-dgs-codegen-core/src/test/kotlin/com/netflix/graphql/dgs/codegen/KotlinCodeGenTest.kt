@@ -1691,6 +1691,7 @@ class KotlinCodeGenTest {
                 |
                 |import com.fasterxml.jackson.`annotation`.JsonProperty
                 |import kotlin.Deprecated
+                |import kotlin.ReplaceWith
                 |import kotlin.String
                 |
                 |@Deprecated(message = "This is going bye bye")
@@ -1698,7 +1699,7 @@ class KotlinCodeGenTest {
                 |  @JsonProperty("name")
                 |  @Deprecated(
                 |    message = "This field is no longer available",
-                |    replaceWith = "firstName"
+                |    replaceWith = ReplaceWith("firstName")
                 |  )
                 |  public val name: String? = null
                 |) {
