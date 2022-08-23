@@ -21,6 +21,7 @@ package com.netflix.graphql.dgs.codegen
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -1700,6 +1701,9 @@ class KotlinCodeGenTest {
         assertThat(parameterSpec.annotations).hasSize(2)
         assertThat((parameterSpec.annotations[0].typeName as ClassName).canonicalName).isEqualTo("com.fasterxml.jackson.annotation.JsonProperty")
         assertThat((parameterSpec.annotations[1].typeName as ClassName).canonicalName).isEqualTo("kotlin.Deprecated")
+        assertThat(parameterSpec.annotations[1].members).hasSize(2)
+        assertThat(parameterSpec.annotations[1].members[0]).extracting("formatParts", "args").asList().contains(listOf("message = ", "%S"), listOf("This field is no longer available"))
+        assertThat(parameterSpec.annotations[1].members[1]).extracting("formatParts", "args").asString().contains("replaceWith = ", "%M", "(", "%S", ")", "kotlin.ReplaceWith", "firstName")
     }
 
     @Test
