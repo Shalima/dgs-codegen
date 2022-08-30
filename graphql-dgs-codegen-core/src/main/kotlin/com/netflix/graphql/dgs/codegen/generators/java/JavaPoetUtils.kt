@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.netflix.graphql.dgs.codegen.CodeGen
 import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.generators.shared.PackageParserUtil
+import com.netflix.graphql.dgs.codegen.generators.shared.ParserConstants
 import com.netflix.graphql.dgs.codegen.generators.shared.generatedAnnotationClassName
 import com.netflix.graphql.dgs.codegen.generators.shared.generatedDate
 import com.squareup.javapoet.AnnotationSpec
@@ -57,12 +58,6 @@ import java.lang.IllegalArgumentException
  *   property = "__typename")
  * ```
  */
-
-object ParserConstants {
-    const val TYPE = "type"
-    const val NAME = "name"
-    const val INPUTS = "inputs"
-}
 
 /**
  * Adds @Deprecated annotation

@@ -28,6 +28,7 @@ import com.netflix.graphql.dgs.codegen.CodeGen
 import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.generators.shared.CodeGeneratorUtils.capitalized
 import com.netflix.graphql.dgs.codegen.generators.shared.PackageParserUtil
+import com.netflix.graphql.dgs.codegen.generators.shared.ParserConstants
 import com.netflix.graphql.dgs.codegen.generators.shared.generatedAnnotationClassName
 import com.netflix.graphql.dgs.codegen.generators.shared.generatedDate
 import com.squareup.kotlinpoet.*
@@ -44,20 +45,6 @@ import graphql.language.ObjectValue
 import graphql.language.StringValue
 import graphql.language.Value
 import java.lang.IllegalArgumentException
-
-object ParserConstants {
-    const val ASSIGNMENT_OPERATOR = " = "
-    const val TYPE = "type"
-    const val NAME = "name"
-    const val REASON = "reason"
-    const val CUSTOM_ANNOTATION = "annotate"
-    const val DEPRECATED = "deprecated"
-    const val INPUTS = "inputs"
-    const val REPLACE_WITH_STR = ", replace with "
-    const val MESSAGE = "message"
-    const val REPLACE_WITH = "replaceWith"
-    const val REPLACE_WITH_CLASS = "ReplaceWith"
-}
 
 /**
  * Generate a [JsonTypeInfo] annotation, which allows for Jackson
