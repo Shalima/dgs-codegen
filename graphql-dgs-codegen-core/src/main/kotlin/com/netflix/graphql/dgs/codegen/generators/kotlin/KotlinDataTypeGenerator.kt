@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.CodeGenResult
 import com.netflix.graphql.dgs.codegen.filterSkipped
 import com.netflix.graphql.dgs.codegen.generators.java.InputTypeGenerator
+import com.netflix.graphql.dgs.codegen.generators.shared.ParserConstants
 import com.netflix.graphql.dgs.codegen.shouldSkip
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.BOOLEAN

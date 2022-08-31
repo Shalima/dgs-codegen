@@ -21,6 +21,7 @@ package com.netflix.graphql.dgs.codegen.generators.java
 import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.CodeGenResult
 import com.netflix.graphql.dgs.codegen.filterSkipped
+import com.netflix.graphql.dgs.codegen.generators.shared.ParserConstants
 import com.netflix.graphql.dgs.codegen.shouldSkip
 import com.squareup.javapoet.*
 import graphql.language.*
@@ -166,14 +167,6 @@ abstract class BaseDataTypeGenerator(
     internal val document: Document
 ) {
     internal val typeUtils = TypeUtils(packageName, config, document)
-
-    object ParserConstants {
-        const val NAME = "name"
-        const val REASON = "reason"
-        const val CUSTOM_ANNOTATION = "annotate"
-        const val DEPRECATED = "deprecated"
-        const val REPLACE_WITH_STR = ", replace with "
-    }
 
     /**
      * Creates an argument map of the input Arguments
