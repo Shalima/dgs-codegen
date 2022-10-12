@@ -237,7 +237,9 @@ abstract class BaseDataTypeGenerator(
 
         if (directives.isNotEmpty()) {
             val (annotations, comments) = applyDirectives(directives)
-            javaType.addAnnotations(annotations[SiteTarget.DEFAULT.name])
+            if (annotations.containsKey(SiteTarget.DEFAULT.name)) {
+                javaType.addAnnotations(annotations[SiteTarget.DEFAULT.name])
+            }
             if (!comments.isNullOrBlank()) {
                 javaType.addJavadoc("\$L", comments)
             }
