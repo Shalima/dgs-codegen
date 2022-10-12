@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.CodeGenResult
 import com.netflix.graphql.dgs.codegen.filterSkipped
 import com.netflix.graphql.dgs.codegen.generators.shared.ParserConstants
+import com.netflix.graphql.dgs.codegen.generators.shared.SiteTarget
 import com.netflix.graphql.dgs.codegen.shouldSkip
 import com.squareup.javapoet.*
 import graphql.language.*
@@ -181,12 +182,12 @@ abstract class BaseDataTypeGenerator(
     /**
      * Applies directives like customAnnotation
      */
-    private fun applyDirectives(directives: List<Directive>): Pair<MutableMap<String?, MutableList<AnnotationSpec>>, String?> {
+    private fun applyDirectives(directives: List<Directive>): Pair<MutableMap<String, MutableList<AnnotationSpec>>, String?> {
         var commentFormat: String? = null
         return Pair(
             directives.fold(mutableMapOf()) { annotations, directive ->
                 val argumentMap = createArgumentMap(directive)
-                 val siteTarget = if (argumentMap.containsKey(ParserConstants.SITE_TARGET)) (argumentMap[ParserConstants.SITE_TARGET] as StringValue).value else null
+                 val siteTarget = if (argumentMap.containsKey(ParserConstants.SITE_TARGET)) (argumentMap[ParserConstants.SITE_TARGET] as StringValue).value.uppercase() else SiteTarget.DEFAULT.name
                 if (directive.name == ParserConstants.CUSTOM_ANNOTATION && config.generateCustomAnnotations) {
                     if (annotations.containsKey(siteTarget)) {
                         var annotationList: MutableList<AnnotationSpec> = annotations[siteTarget]!!
@@ -237,7 +238,7 @@ abstract class BaseDataTypeGenerator(
 
         if (directives.isNotEmpty()) {
             val (annotations, comments) = applyDirectives(directives)
-            javaType.addAnnotations(annotations[null])
+            javaType.addAnnotations(annotations[SiteTarget.DEFAULT.name])
             if (!comments.isNullOrBlank()) {
                 javaType.addJavadoc("\$L", comments)
             }
@@ -428,11 +429,11 @@ abstract class BaseDataTypeGenerator(
                 fieldBuilder.addJavadoc("\$L", comments)
             }
             annotations.forEach { entry ->
-                when(entry.key) {
-                    ParserConstants.FIELD -> fieldBuilder.addAnnotations(annotations[ParserConstants.FIELD])
-                    ParserConstants.GET -> getterMethodBuilder.addAnnotations(annotations[ParserConstants.GET])
-                    ParserConstants.SET -> setterMethodBuilder.addAnnotations(annotations[ParserConstants.SET])
-                    ParserConstants.SET_PARAM -> parameterBuilder.addAnnotations(annotations[ParserConstants.SET_PARAM])
+                when(SiteTarget.valueOf(entry.key)) {
+                    SiteTarget.FIELD -> fieldBuilder.addAnnotations(annotations[SiteTarget.FIELD.name])
+                    SiteTarget.GET -> getterMethodBuilder.addAnnotations(annotations[SiteTarget.GET.name])
+                    SiteTarget.SET -> setterMethodBuilder.addAnnotations(annotations[SiteTarget.SET.name])
+                    SiteTarget.SETPARAM -> parameterBuilder.addAnnotations(annotations[SiteTarget.SETPARAM.name])
                     else -> fieldBuilder.addAnnotations(annotations[entry.key])
                 }
             }
