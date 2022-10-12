@@ -187,14 +187,13 @@ abstract class BaseDataTypeGenerator(
         return Pair(
             directives.fold(mutableMapOf()) { annotations, directive ->
                 val argumentMap = createArgumentMap(directive)
-                 val siteTarget = if (argumentMap.containsKey(ParserConstants.SITE_TARGET)) (argumentMap[ParserConstants.SITE_TARGET] as StringValue).value.uppercase() else SiteTarget.DEFAULT.name
+                val siteTarget = if (argumentMap.containsKey(ParserConstants.SITE_TARGET)) (argumentMap[ParserConstants.SITE_TARGET] as StringValue).value.uppercase() else SiteTarget.DEFAULT.name
                 if (directive.name == ParserConstants.CUSTOM_ANNOTATION && config.generateCustomAnnotations) {
                     if (annotations.containsKey(siteTarget)) {
                         var annotationList: MutableList<AnnotationSpec> = annotations[siteTarget]!!
                         annotationList.add(customAnnotation(argumentMap, config))
                         annotations[siteTarget] = annotationList
-                    }
-                    else {
+                    } else {
                         annotations[siteTarget] = mutableListOf(customAnnotation(argumentMap, config))
                     }
                 }
@@ -429,7 +428,7 @@ abstract class BaseDataTypeGenerator(
                 fieldBuilder.addJavadoc("\$L", comments)
             }
             annotations.forEach { entry ->
-                when(SiteTarget.valueOf(entry.key)) {
+                when (SiteTarget.valueOf(entry.key)) {
                     SiteTarget.FIELD -> fieldBuilder.addAnnotations(annotations[SiteTarget.FIELD.name])
                     SiteTarget.GET -> getterMethodBuilder.addAnnotations(annotations[SiteTarget.GET.name])
                     SiteTarget.SET -> setterMethodBuilder.addAnnotations(annotations[SiteTarget.SET.name])
