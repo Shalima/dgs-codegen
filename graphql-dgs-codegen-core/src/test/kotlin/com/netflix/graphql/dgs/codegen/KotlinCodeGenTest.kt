@@ -2299,6 +2299,9 @@ class KotlinCodeGenTest {
                 packageName = basePackageName,
                 language = Language.KOTLIN,
                 includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("types", "com.enums")),
+                includeEnumImports = mapOf(
+                    "ValidPerson" to mapOf(Pair("types", "com.enums"))
+                ),
                 generateCustomAnnotations = true
             )
         ).generate().kotlinDataTypes
@@ -2335,6 +2338,9 @@ class KotlinCodeGenTest {
                     packageName = basePackageName,
                     language = Language.KOTLIN,
                     includeImports = mapOf(Pair("validator", "com.test.validator"), Pair("types", "com.enums")),
+                    includeEnumImports = mapOf(
+                        "ValidPerson" to mapOf(Pair("types", "com.enums"))
+                    ),
                     generateCustomAnnotations = true
                 )
             ).generate()
