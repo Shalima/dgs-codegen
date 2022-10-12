@@ -2284,6 +2284,7 @@ class KotlinCodeGenTest {
         assertThat((parameterSpec.annotations[1].typeName as ClassName).canonicalName).isEqualTo("com.test.anotherValidator.ValidName")
         assertThat((parameterSpec.annotations[2].typeName as ClassName).canonicalName).isEqualTo("com.test.nullValidator.NullValue")
     }
+
     @Test
     fun annotateOnTypesWithTarget() {
         val schema = """
@@ -3311,6 +3312,4 @@ It takes a title and such.
         assertThat(fields).hasSize(1)
         assertThat(fields[0].annotations).hasSize(0)
     }
-
-
 }
