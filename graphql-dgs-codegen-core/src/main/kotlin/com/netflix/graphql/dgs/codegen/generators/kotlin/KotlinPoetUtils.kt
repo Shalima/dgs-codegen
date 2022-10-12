@@ -287,6 +287,7 @@ private fun ktTypeClassBestGuess(name: String): ClassName {
  * name -> Name of the class to be annotated. It will contain className with oor without the package name (Mandatory)
  * type -> The type of operation intended with this annotation. This value is also used to look up if there is any default packages associated with this annotation in the config
  * inputs -> These are the input parameters needed for the annotation. If empty no inputs will be present for the annotation
+ * target -> The site target where the annotation should be applied. If no site target is present annotation will not contain any site targets
  */
 fun customAnnotation(annotationArgumentMap: MutableMap<String, Value<Value<*>>>, config: CodeGenConfig): AnnotationSpec {
     if (annotationArgumentMap.isEmpty() || !annotationArgumentMap.containsKey(ParserConstants.NAME) || annotationArgumentMap[ParserConstants.NAME] is NullValue || (annotationArgumentMap[ParserConstants.NAME] as StringValue).value.isEmpty()) {

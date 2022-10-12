@@ -180,7 +180,9 @@ abstract class BaseDataTypeGenerator(
     }
 
     /**
-     * Applies directives like customAnnotation
+     * Applies directives like customAnnotation, deprecated etc. The target value in the directives is used to decide where to apply the annotation.
+     * @input directives: list of directive that needs to be applied
+     * @return Pair of (map of target site and corresponding annotations) and comments
      */
     private fun applyDirectives(directives: List<Directive>): Pair<MutableMap<String, MutableList<AnnotationSpec>>, String?> {
         var commentFormat: String? = null
