@@ -30,4 +30,9 @@ object ParserConstants {
     const val MESSAGE = "message"
     const val REPLACE_WITH = "replaceWith"
     const val REPLACE_WITH_CLASS = "ReplaceWith"
+    const val SITE_TARGET = "target"
+    const val FIELD = "field"
+    const val GET = "get"
+    const val SET = "set"
+    const val SET_PARAM = "setparam"
 }

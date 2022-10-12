@@ -181,16 +181,24 @@ abstract class BaseDataTypeGenerator(
     /**
      * Applies directives like customAnnotation
      */
-    private fun applyDirectives(directives: List<Directive>): Pair<MutableList<AnnotationSpec>, String?> {
+    private fun applyDirectives(directives: List<Directive>): Pair<MutableMap<String?, MutableList<AnnotationSpec>>, String?> {
         var commentFormat: String? = null
         return Pair(
-            directives.fold(mutableListOf()) { annotations, directive ->
+            directives.fold(mutableMapOf()) { annotations, directive ->
                 val argumentMap = createArgumentMap(directive)
+                 val siteTarget = if (argumentMap.containsKey(ParserConstants.SITE_TARGET)) (argumentMap[ParserConstants.SITE_TARGET] as StringValue).value else null
                 if (directive.name == ParserConstants.CUSTOM_ANNOTATION && config.generateCustomAnnotations) {
-                    annotations.add(customAnnotation(argumentMap, config))
+                    if (annotations.containsKey(siteTarget)) {
+                        var annotationList: MutableList<AnnotationSpec> = annotations[siteTarget]!!
+                        annotationList.add(customAnnotation(argumentMap, config))
+                        annotations[siteTarget] = annotationList
+                    }
+                    else {
+                        annotations[siteTarget] = mutableListOf(customAnnotation(argumentMap, config))
+                    }
                 }
                 if (directive.name == ParserConstants.DEPRECATED) {
-                    annotations.add(deprecatedAnnotation())
+                    annotations[siteTarget] = mutableListOf(deprecatedAnnotation())
                     if (argumentMap.containsKey(ParserConstants.REASON)) {
                         val reason: String = (argumentMap[ParserConstants.REASON] as StringValue).value
                         val replace = reason.substringAfter(ParserConstants.REPLACE_WITH_STR, "")
@@ -229,7 +237,7 @@ abstract class BaseDataTypeGenerator(
 
         if (directives.isNotEmpty()) {
             val (annotations, comments) = applyDirectives(directives)
-            javaType.addAnnotations(annotations)
+            javaType.addAnnotations(annotations[null])
             if (!comments.isNullOrBlank()) {
                 javaType.addJavadoc("\$L", comments)
             }
@@ -390,21 +398,9 @@ abstract class BaseDataTypeGenerator(
             FieldSpec.builder(returnType, ReservedKeywordSanitizer.sanitize(fieldDefinition.name)).addModifiers(Modifier.PRIVATE)
         }
 
-        if (fieldDefinition.directives.isNotEmpty()) {
-            val (annotations, comments) = applyDirectives(fieldDefinition.directives)
-            fieldBuilder.addAnnotations(annotations)
-            if (!comments.isNullOrBlank()) {
-                fieldBuilder.addJavadoc("\$L", comments)
-            }
-        }
-
         if (fieldDefinition.description != null) {
             fieldBuilder.addJavadoc(fieldDefinition.description.sanitizeJavaDoc())
         }
-
-        val field = fieldBuilder.build()
-
-        javaType.addField(field)
 
         val getterName = typeUtils.transformIfDefaultClassMethodExists("get${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}", TypeUtils.Companion.getClass)
         val getterMethodBuilder = MethodSpec.methodBuilder(getterName).addModifiers(Modifier.PUBLIC).returns(returnType).addStatement("return \$N", ReservedKeywordSanitizer.sanitize(fieldDefinition.name))
@@ -416,19 +412,36 @@ abstract class BaseDataTypeGenerator(
             getterMethodBuilder.addJavadoc(fieldDefinition.description.sanitizeJavaDoc())
         }
 
-        javaType.addMethod(getterMethodBuilder.build())
-
         val setterName = typeUtils.transformIfDefaultClassMethodExists("set${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}", TypeUtils.Companion.setClass)
-        javaType.addMethod(
-            MethodSpec.methodBuilder(setterName)
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(returnType, ReservedKeywordSanitizer.sanitize(fieldDefinition.name))
-                .addStatement(
-                    "this.\$N = \$N",
-                    ReservedKeywordSanitizer.sanitize(fieldDefinition.name),
-                    ReservedKeywordSanitizer.sanitize(fieldDefinition.name)
-                ).build()
-        )
+        val parameterBuilder = ParameterSpec.builder(returnType, ReservedKeywordSanitizer.sanitize(fieldDefinition.name))
+        val setterMethodBuilder = MethodSpec.methodBuilder(setterName)
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement(
+                "this.\$N = \$N",
+                ReservedKeywordSanitizer.sanitize(fieldDefinition.name),
+                ReservedKeywordSanitizer.sanitize(fieldDefinition.name)
+            )
+
+        if (fieldDefinition.directives.isNotEmpty()) {
+            val (annotations, comments) = applyDirectives(fieldDefinition.directives)
+            if (!comments.isNullOrBlank()) {
+                fieldBuilder.addJavadoc("\$L", comments)
+            }
+            annotations.forEach { entry ->
+                when(entry.key) {
+                    ParserConstants.FIELD -> fieldBuilder.addAnnotations(annotations[ParserConstants.FIELD])
+                    ParserConstants.GET -> getterMethodBuilder.addAnnotations(annotations[ParserConstants.GET])
+                    ParserConstants.SET -> setterMethodBuilder.addAnnotations(annotations[ParserConstants.SET])
+                    ParserConstants.SET_PARAM -> parameterBuilder.addAnnotations(annotations[ParserConstants.SET_PARAM])
+                    else -> fieldBuilder.addAnnotations(annotations[entry.key])
+                }
+            }
+        }
+        setterMethodBuilder.addParameter(parameterBuilder.build())
+
+        javaType.addField(fieldBuilder.build())
+        javaType.addMethod(getterMethodBuilder.build())
+        javaType.addMethod(setterMethodBuilder.build())
     }
 
     private fun addAbstractGetter(returnType: com.squareup.javapoet.TypeName?, fieldDefinition: Field, javaType: TypeSpec.Builder) {

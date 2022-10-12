@@ -299,6 +299,9 @@ fun customAnnotation(annotationArgumentMap: MutableMap<String, Value<Value<*>>>,
     )
     val className = ClassName(packageName = packageName, simpleNames = listOf(simpleName))
     val annotation: AnnotationSpec.Builder = AnnotationSpec.builder(className)
+    if (annotationArgumentMap.containsKey(ParserConstants.SITE_TARGET)) {
+        annotation.useSiteTarget(AnnotationSpec.UseSiteTarget.valueOf((annotationArgumentMap[ParserConstants.SITE_TARGET] as StringValue).value.uppercase()))
+    }
     if (annotationArgumentMap.containsKey(ParserConstants.INPUTS)) {
         val codeBlocks: List<CodeBlock> = parseInputs(config, annotationArgumentMap[ParserConstants.INPUTS] as ObjectValue, (annotationArgumentMap[ParserConstants.NAME] as StringValue).value)
         codeBlocks.forEach { codeBlock ->
