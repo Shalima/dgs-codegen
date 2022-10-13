@@ -191,12 +191,12 @@ abstract class BaseDataTypeGenerator(
                 val argumentMap = createArgumentMap(directive)
                 val siteTarget = if (argumentMap.containsKey(ParserConstants.SITE_TARGET)) (argumentMap[ParserConstants.SITE_TARGET] as StringValue).value.uppercase() else SiteTarget.DEFAULT.name
                 if (directive.name == ParserConstants.CUSTOM_ANNOTATION && config.generateCustomAnnotations) {
-                    if (annotations.containsKey(siteTarget)) {
+                    annotations[siteTarget] = if (annotations.containsKey(siteTarget)) {
                         var annotationList: MutableList<AnnotationSpec> = annotations[siteTarget]!!
                         annotationList.add(customAnnotation(argumentMap, config))
-                        annotations[siteTarget] = annotationList
+                        annotationList
                     } else {
-                        annotations[siteTarget] = mutableListOf(customAnnotation(argumentMap, config))
+                        mutableListOf(customAnnotation(argumentMap, config))
                     }
                 }
                 if (directive.name == ParserConstants.DEPRECATED) {
