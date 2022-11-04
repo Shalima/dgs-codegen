@@ -2172,10 +2172,12 @@ class KotlinCodeGenTest {
                 packageName = basePackageName,
                 language = Language.KOTLIN,
                 includeImports = mapOf(Pair("validator", "com.test.validator")),
-                includeClassImports = mapOf("ValidPerson" to mapOf(
-                    Pair("BasicValidation", "com.test.validator.groups"),
-                    Pair("AdvanceValidation", "com.test.validator.groups")
-                )),
+                includeClassImports = mapOf(
+                    "ValidPerson" to mapOf(
+                        Pair("BasicValidation", "com.test.validator.groups"),
+                        Pair("AdvanceValidation", "com.test.validator.groups")
+                    )
+                ),
                 generateCustomAnnotations = true
             )
         )

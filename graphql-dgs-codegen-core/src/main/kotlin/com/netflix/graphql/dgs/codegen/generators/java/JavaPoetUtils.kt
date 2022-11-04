@@ -222,8 +222,7 @@ private fun generateCode(config: CodeGenConfig, value: Value<Value<*>>, annotati
                     "\$T.class",
                     ClassName.get(PackageParserUtil.getClassPackage(config, annotationName, className), className)
                 )
-            }
-            else CodeBlock.of("\$S", (value as StringValue).value)
+            } else CodeBlock.of("\$S", (value as StringValue).value)
         is FloatValue -> CodeBlock.of("\$L", (value as FloatValue).value)
         // In an enum value the prefix (key in the parameters map for the enum) is used to get the package name from the config
         // Limitation: Since it uses the enum key to lookup the package from the configs. 2 enums using different packages cannot have the same keys.

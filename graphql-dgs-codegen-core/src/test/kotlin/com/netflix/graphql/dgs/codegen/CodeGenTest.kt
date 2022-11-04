@@ -3370,10 +3370,12 @@ It takes a title and such.
                 schemas = setOf(schema),
                 packageName = basePackageName,
                 includeImports = mapOf(Pair("validator", "com.test.validator")),
-                includeClassImports = mapOf("ValidPerson" to mapOf(
-                    Pair("BasicValidation", "com.test.validator.groups"),
-                    Pair("AdvanceValidation", "com.test.validator.groups")
-                )),
+                includeClassImports = mapOf(
+                    "ValidPerson" to mapOf(
+                        Pair("BasicValidation", "com.test.validator.groups"),
+                        Pair("AdvanceValidation", "com.test.validator.groups")
+                    )
+                ),
                 generateCustomAnnotations = true
             )
         ).generate()
