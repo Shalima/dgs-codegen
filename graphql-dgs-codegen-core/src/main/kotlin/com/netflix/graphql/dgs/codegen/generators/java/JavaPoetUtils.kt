@@ -213,23 +213,17 @@ private fun generateCode(config: CodeGenConfig, value: Value<Value<*>>, annotati
     when (value) {
         is BooleanValue -> CodeBlock.of("\$L", (value as BooleanValue).isValue)
         is IntValue -> CodeBlock.of("\$L", (value as IntValue).value)
-        is StringValue ->
-            // If string ends with .class or ::class, treat as Java Class
-            // Note: schema is universal and can be shared across java or kotlin code, hence both .class and ::class are supported
-            if ((value as StringValue).value.endsWith(ParserConstants.KOTLIN_CLASS)) {
-                val className = (value as StringValue).value.dropLast(ParserConstants.KOTLIN_CLASS_LENGTH)
+        is StringValue -> {
+            // If string value ends with .class and classImports mapping is provided, treat as Java Class
+            val string = (value as StringValue).value
+            if (string.endsWith(ParserConstants.CLASS_STRING)) {
+                val className = string.dropLast(ParserConstants.CLASS_LENGTH)
                 // Use annotationName and className in the PackagerParserUtil to get Class Package name.
-                CodeBlock.of(
-                    "\$T.class",
-                    ClassName.get(PackageParserUtil.getClassPackage(config, annotationName, className), className)
-                )
-            } else if ((value as StringValue).value.endsWith(ParserConstants.JAVA_CLASS)) {
-                val className = (value as StringValue).value.dropLast(ParserConstants.JAVA_CLASS_LENGTH)
-                CodeBlock.of(
-                    "\$T.class",
-                    ClassName.get(PackageParserUtil.getClassPackage(config, annotationName, className), className)
-                )
-            } else CodeBlock.of("\$S", (value as StringValue).value)
+                val classPackage = PackageParserUtil.getClassPackage(config, annotationName, className)
+                if (classPackage.isNotEmpty()) CodeBlock.of("\$T.class", ClassName.get(classPackage, className))
+                else CodeBlock.of("\$S", string)
+            } else CodeBlock.of("\$S", string)
+        }
         is FloatValue -> CodeBlock.of("\$L", (value as FloatValue).value)
         // In an enum value the prefix (key in the parameters map for the enum) is used to get the package name from the config
         // Limitation: Since it uses the enum key to lookup the package from the configs. 2 enums using different packages cannot have the same keys.

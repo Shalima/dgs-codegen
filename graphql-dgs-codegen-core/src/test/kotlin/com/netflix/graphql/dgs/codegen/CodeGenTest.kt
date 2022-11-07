@@ -3358,10 +3358,41 @@ It takes a title and such.
     }
 
     @Test
-    fun annotateOnTypesWithListOfClassObjects() {
-        // strings ending with .class or ::class will be treated as class objects and generate a Java Class
+    fun annotateOnTypesWithClassObjectsNoMapping() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation.class","AdvanceValidation::class"]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: "BasicValidation.class"}) {
+                name: String @annotate(name: "com.test.anotherValidator.ValidName")
+            }
+        """.trimIndent()
+
+        val (dataTypes) = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                includeImports = mapOf(Pair("validator", "com.test.validator")),
+                generateCustomAnnotations = true
+            )
+        ).generate()
+
+        assertThat(dataTypes.size).isEqualTo(1)
+        val person = dataTypes.single().typeSpec
+        assertThat(person.name).isEqualTo("Person")
+        assertThat(person.annotations).hasSize(1)
+        assertThat(((person.annotations[0] as AnnotationSpec).type as ClassName).simpleName()).isEqualTo("ValidPerson")
+        assertThat(((person.annotations[0] as AnnotationSpec).type as ClassName).canonicalName()).isEqualTo("com.test.validator.ValidPerson")
+        assertThat((person.annotations[0] as AnnotationSpec).members).hasSize(1)
+        assertThat((person.annotations[0] as AnnotationSpec).members["groups"]).isEqualTo(listOf(CodeBlock.of("\$S", "BasicValidation.class"))) // treat as string when no mapping is provided
+        val fields = person.fieldSpecs
+        assertThat(fields).hasSize(1)
+        assertThat(fields[0].annotations).hasSize(1)
+        assertThat(((fields[0].annotations[0] as AnnotationSpec).type as ClassName).simpleName()).isEqualTo("ValidName")
+        assertThat(((fields[0].annotations[0] as AnnotationSpec).type as ClassName).canonicalName()).isEqualTo("com.test.anotherValidator.ValidName")
+    }
+
+    @Test
+    fun annotateOnTypesWithListOfClassObjects() {
+        val schema = """
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation.class","AdvanceValidation.class"]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()

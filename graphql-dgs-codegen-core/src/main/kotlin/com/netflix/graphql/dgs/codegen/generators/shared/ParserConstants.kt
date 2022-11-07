@@ -31,8 +31,6 @@ object ParserConstants {
     const val REPLACE_WITH = "replaceWith"
     const val REPLACE_WITH_CLASS = "ReplaceWith"
     const val SITE_TARGET = "target"
-    const val KOTLIN_CLASS = "::class"
-    const val JAVA_CLASS = ".class"
-    const val KOTLIN_CLASS_LENGTH = KOTLIN_CLASS.length
-    const val JAVA_CLASS_LENGTH = JAVA_CLASS.length
+    const val CLASS_STRING = ".class"
+    const val CLASS_LENGTH = CLASS_STRING.length
 }

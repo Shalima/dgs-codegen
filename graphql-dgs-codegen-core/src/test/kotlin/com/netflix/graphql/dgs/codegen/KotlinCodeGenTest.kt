@@ -2126,7 +2126,7 @@ class KotlinCodeGenTest {
     @Test
     fun annotateOnTypesWithClassObjects() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: "BasicValidation::class"}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: "BasicValidation.class"}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()
@@ -2159,10 +2159,43 @@ class KotlinCodeGenTest {
     }
 
     @Test
-    fun annotateOnTypesWithListOfClassObjects() {
-        // strings ending with .class or ::class will be treated as class objects and generate a Kotlin KClass
+    fun annotateOnTypesWithClassObjectsNoMapping() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation::class","AdvanceValidation.class"]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: "BasicValidation.class"}) {
+                name: String @annotate(name: "com.test.anotherValidator.ValidName")
+            }
+        """.trimIndent()
+
+        val codeGen = CodeGen(
+            CodeGenConfig(
+                schemas = setOf(schema),
+                packageName = basePackageName,
+                language = Language.KOTLIN,
+                includeImports = mapOf(Pair("validator", "com.test.validator")),
+                generateCustomAnnotations = true
+            )
+        )
+        val dataTypes = codeGen.generate().kotlinDataTypes
+
+        assertThat(dataTypes).hasSize(1)
+        assertThat(dataTypes[0].name).isEqualTo("Person")
+
+        val annotationSpec = (((dataTypes as ArrayList<*>)[0] as FileSpec).members[0] as TypeSpec).annotationSpecs[0]
+        assertThat((annotationSpec.typeName as ClassName).canonicalName).isEqualTo("com.test.validator.ValidPerson")
+        assertThat(annotationSpec.members[0]).extracting("args").asList().hasSize(1)
+        assertThat(annotationSpec.members[0]).extracting("args").asString().contains("BasicValidation.class") // treat as string when no mapping is provided
+
+        val parameterSpec = (((dataTypes[0].members)[0] as TypeSpec).primaryConstructor as FunSpec).parameters[0]
+        assertThat(parameterSpec.name).isEqualTo("name")
+        assertThat(parameterSpec.annotations).hasSize(2)
+        assertThat((parameterSpec.annotations[0].typeName as ClassName).canonicalName).isEqualTo("com.fasterxml.jackson.annotation.JsonProperty")
+        assertThat((parameterSpec.annotations[1].typeName as ClassName).canonicalName).isEqualTo("com.test.anotherValidator.ValidName")
+    }
+
+    @Test
+    fun annotateOnTypesWithListOfClassObjects() {
+        val schema = """
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation.class","AdvanceValidation.class"]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()
@@ -2202,9 +2235,9 @@ class KotlinCodeGenTest {
     @Test
     fun annotateOnTypesWithMultipleListsOfClassObjects() {
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation::class","AdvanceValidation::class"]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation.class","AdvanceValidation.class"]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
-                type: String @annotate(name: "ValidDateOfBirth", type: "dateOfBirth", inputs: {levels: ["PreliminaryValidation::class","SecondaryValidation::class"]}) 
+                type: String @annotate(name: "ValidDateOfBirth", type: "dateOfBirth", inputs: {levels: ["PreliminaryValidation.class","SecondaryValidation.class"]}) 
             }
         """.trimIndent()
 
