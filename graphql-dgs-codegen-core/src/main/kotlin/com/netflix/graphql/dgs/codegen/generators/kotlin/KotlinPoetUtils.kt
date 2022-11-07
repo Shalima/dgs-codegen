@@ -320,18 +320,24 @@ private fun generateCode(config: CodeGenConfig, value: Value<Value<*>>, annotati
         is BooleanValue -> CodeBlock.of("$prefix%L", (value as BooleanValue).isValue)
         is IntValue -> CodeBlock.of("$prefix%L", (value as IntValue).value)
         is StringValue ->
-            // If string ends with ::class, treat as class object
-            if ((value as StringValue).value.takeLast(7) == "::class") {
-                val className = (value as StringValue).value.dropLast(7)
+            // If string ends with .class or ::class, treat as Kotlin KClass
+            // Note: schema is universal and can be shared across java or kotlin code, hence both .class and ::class are supported
+            if ((value as StringValue).value.endsWith(ParserConstants.KOTLIN_CLASS)) {
+                val className = (value as StringValue).value.dropLast(ParserConstants.KOTLIN_CLASS_LENGTH)
                 CodeBlock.of(
                     "$prefix%T::class",
                     // Use annotationName and className in the PackagerParserUtil to get Class Package name.
                     ClassName(PackageParserUtil.getClassPackage(config, annotationName, className), className)
                 )
+            } else if ((value as StringValue).value.endsWith(ParserConstants.JAVA_CLASS)) {
+                val className = (value as StringValue).value.dropLast(ParserConstants.JAVA_CLASS_LENGTH)
+                CodeBlock.of(
+                    "$prefix%T::class",
+                    ClassName(PackageParserUtil.getClassPackage(config, annotationName, className), className)
+                )
             } else CodeBlock.of("$prefix%S", (value as StringValue).value)
         is FloatValue -> CodeBlock.of("$prefix%L", (value as FloatValue).value)
         // In an enum value the prefix/type (key in the parameters map for the enum) is used to get the package name from the config
-        // Limitation: Since it uses the enum key to lookup the package from the configs. 2 enums using different packages cannot have the same keys.
         is EnumValue -> CodeBlock.of(
             "$prefix%M",
             MemberName(

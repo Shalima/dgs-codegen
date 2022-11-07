@@ -2160,8 +2160,9 @@ class KotlinCodeGenTest {
 
     @Test
     fun annotateOnTypesWithListOfClassObjects() {
+        // strings ending with .class or ::class will be treated as class objects and generate a Kotlin KClass
         val schema = """
-            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation::class","AdvanceValidation::class"]}) {
+            type Person @annotate(name: "ValidPerson", type: "validator", inputs: {groups: ["BasicValidation::class","AdvanceValidation.class"]}) {
                 name: String @annotate(name: "com.test.anotherValidator.ValidName")
             }
         """.trimIndent()

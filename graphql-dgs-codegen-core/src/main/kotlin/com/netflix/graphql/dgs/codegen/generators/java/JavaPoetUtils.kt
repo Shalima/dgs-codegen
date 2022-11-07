@@ -214,10 +214,17 @@ private fun generateCode(config: CodeGenConfig, value: Value<Value<*>>, annotati
         is BooleanValue -> CodeBlock.of("\$L", (value as BooleanValue).isValue)
         is IntValue -> CodeBlock.of("\$L", (value as IntValue).value)
         is StringValue ->
-            // If string ends with .class, treat as class object
-            if ((value as StringValue).value.takeLast(6) == ".class") {
-                val className = (value as StringValue).value.dropLast(6)
+            // If string ends with .class or ::class, treat as Java Class
+            // Note: schema is universal and can be shared across java or kotlin code, hence both .class and ::class are supported
+            if ((value as StringValue).value.endsWith(ParserConstants.KOTLIN_CLASS)) {
+                val className = (value as StringValue).value.dropLast(ParserConstants.KOTLIN_CLASS_LENGTH)
                 // Use annotationName and className in the PackagerParserUtil to get Class Package name.
+                CodeBlock.of(
+                    "\$T.class",
+                    ClassName.get(PackageParserUtil.getClassPackage(config, annotationName, className), className)
+                )
+            } else if ((value as StringValue).value.endsWith(ParserConstants.JAVA_CLASS)) {
+                val className = (value as StringValue).value.dropLast(ParserConstants.JAVA_CLASS_LENGTH)
                 CodeBlock.of(
                     "\$T.class",
                     ClassName.get(PackageParserUtil.getClassPackage(config, annotationName, className), className)
